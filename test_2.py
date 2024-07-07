@@ -101,10 +101,10 @@ for idx, row in enumerate(ws.iter_rows(min_row=2, min_col=1, max_col=7, values_o
     ws[f'I{idx}'] = f'=IF(OR(B{idx}<=30,C{idx}<=30,D{idx}<=30,E{idx}<=30,F{idx}<=30),A{idx},"")'
 
 # Define the border style
-border_style = Border(left=Side(style='low'), 
-                      right=Side(style='low'), 
-                      top=Side(style='low'), 
-                      bottom=Side(style='low'))
+border_style = Border(left=Side(style='thin'), 
+                      right=Side(style='thin'), 
+                      top=Side(style='thin'), 
+                      bottom=Side(style='thin'))
 
 # Apply the border to all cells
 for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
