@@ -5,6 +5,7 @@ import ta
 from dotenv import load_dotenv
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Border, Side
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -30,27 +31,25 @@ def get_rsi(symbol, interval, limit=500):
     
     # Return the last 5 RSI values
     return df['rsi'].dropna().tail(5).values
+
 with open('textcoin.txt', 'r') as file:
     symbols = [line.strip() for line in file.readlines()]
 
 interval = '1h'  # Specify the interval here
 
-# Create a DataFrame to store RSI values
-data = {'Tên': symbols}
+# Create a DataFrame to store RSI values and chart URLs
+data = {'Tên': symbols, 'Chart URL': []}
 for i in range(1, 6):
     data[f'rsi{i}'] = []
 
 for symbol in symbols:
     rsi_values = get_rsi(symbol, interval)
-    data_row = {'Tên': symbol}
+    data_row = {'Tên': symbol, 'Chart URL': f'https://www.tradingview.com/chart/?symbol=BINANCE:{symbol}'}
     for i, rsi_value in enumerate(rsi_values, start=1):
         data_row[f'rsi{i}'] = rsi_value
-    data['rsi1'].append(data_row['rsi1'])
-    data['rsi2'].append(data_row['rsi2'])
-    data['rsi3'].append(data_row['rsi3'])
-    data['rsi4'].append(data_row['rsi4'])
-    data['rsi5'].append(data_row['rsi5'])
-    
+    data['Chart URL'].append(data_row['Chart URL'])
+    for i in range(1, 6):
+        data[f'rsi{i}'].append(data_row[f'rsi{i}'])
 
 # Convert data to DataFrame
 rsi_df = pd.DataFrame(data)
@@ -82,8 +81,17 @@ ws = wb.active
 yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 orange_fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
 grays_fill = PatternFill(start_color="B6B7AF", end_color="FFA500", fill_type="solid")
+
+# Convert RSI values to numeric values in the Excel sheet
+for row in ws.iter_rows(min_row=2, min_col=3, max_col=7):  # Update columns range
+    for cell in row:
+        try:
+            cell.value = float(cell.value)
+        except (TypeError, ValueError):
+            cell.value = None
+
 # Apply the conditional formatting to the RSI columns
-for row in ws.iter_rows(min_row=2, min_col=2, max_col=6):
+for row in ws.iter_rows(min_row=2, min_col=3, max_col=7):  # Update columns range
     for cell in row:
         if cell.value is not None:
             if cell.value >= 70:
@@ -96,9 +104,9 @@ ws['H1'] = 'RSI >= 70'
 ws['I1'] = 'RSI <= 30'
 
 # Add conditional formulas to the sheet
-for idx, row in enumerate(ws.iter_rows(min_row=2, min_col=1, max_col=7, values_only=True), start=2):
-    ws[f'H{idx}'] = f'=IF(OR(B{idx}>=70,C{idx}>=70,D{idx}>=70,E{idx}>=70,F{idx}>=70),A{idx},"")'
-    ws[f'I{idx}'] = f'=IF(OR(B{idx}<=30,C{idx}<=30,D{idx}<=30,E{idx}<=30,F{idx}<=30),A{idx},"")'
+for idx, row in enumerate(ws.iter_rows(min_row=2, min_col=1, max_col=8, values_only=True), start=2):
+    ws[f'H{idx}'] = f'=IF(OR(C{idx}>=70,D{idx}>=70,E{idx}>=70,F{idx}>=70,G{idx}>=70),A{idx},"")'
+    ws[f'I{idx}'] = f'=IF(OR(C{idx}<=30,D{idx}<=30,E{idx}<=30,F{idx}<=30,G{idx}<=30),A{idx},"")'
 
 # Define the border style
 border_style = Border(left=Side(style='thin'), 
