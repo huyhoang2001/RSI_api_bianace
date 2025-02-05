@@ -33,31 +33,27 @@ def get_rsi(symbol, interval, limit=500):
 with open('textcoin.txt', 'r') as file:
     symbols = [line.strip() for line in file.readlines()]
 
-interval = '15m'  # Specify the interval here
+intervals = ['15m', '1h', '4h']  # Specify the intervals here
 
-# Lists to store symbols and their chart URLs that meet the RSI conditions
-rsi_high = []  # RSI >= 80
-rsi_low = []   # RSI <= 20
+# Dictionary to store results for each interval
+results = {interval: {'rsi_high': [], 'rsi_low': []} for interval in intervals}
 
-for symbol in symbols:
-    rsi_values = get_rsi(symbol, interval)
-    for rsi_value in rsi_values:
-        if rsi_value >= 80:
-            rsi_high.append({
-                'Tên': symbol,
-                'Chart URL': f'https://www.tradingview.com/chart/?symbol=BINANCE:{symbol}'
-            })
-            break
-        elif rsi_value <= 20:
-            rsi_low.append({
-                'Tên': symbol,
-                'Chart URL': f'https://www.tradingview.com/chart/?symbol=BINANCE:{symbol}'
-            })
-            break
-
-# Convert the lists to DataFrames
-rsi_high_df = pd.DataFrame(rsi_high)
-rsi_low_df = pd.DataFrame(rsi_low)
+for interval in intervals:
+    for symbol in symbols:
+        rsi_values = get_rsi(symbol, interval)
+        for rsi_value in rsi_values:
+            if rsi_value >= 80:
+                results[interval]['rsi_high'].append({
+                    'Tên': symbol,
+                    'Chart URL': f'https://www.tradingview.com/chart/?symbol=BINANCE:{symbol}'
+                })
+                break
+            elif rsi_value <= 20:
+                results[interval]['rsi_low'].append({
+                    'Tên': symbol,
+                    'Chart URL': f'https://www.tradingview.com/chart/?symbol=BINANCE:{symbol}'
+                })
+                break
 
 # Define the Excel filename
 excel_file = 'rsi_filtered_data.xlsx'
@@ -66,13 +62,36 @@ excel_file = 'rsi_filtered_data.xlsx'
 if os.path.exists(excel_file):
     # If the file exists, read the existing data
     with pd.ExcelWriter(excel_file, mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
-        # Write the new data to the respective sheets
-        rsi_high_df.to_excel(writer, sheet_name='RSI >= 80', index=False)
-        rsi_low_df.to_excel(writer, sheet_name='RSI <= 20', index=False)
+        for interval in intervals:
+            rsi_high_df = pd.DataFrame(results[interval]['rsi_high'])
+            rsi_low_df = pd.DataFrame(results[interval]['rsi_low'])
+            
+            # Create a new sheet for the interval
+            sheet_name = f'{interval}'
+            start_row = 0
+            
+            # Write RSI >= 80 data
+            rsi_high_df.to_excel(writer, sheet_name=sheet_name, startrow=start_row, index=False)
+            start_row += len(rsi_high_df) + 2  # Add 2 rows spacing
+            
+            # Write RSI <= 20 data
+            rsi_low_df.to_excel(writer, sheet_name=sheet_name, startrow=start_row, index=False)
     print(f'Filtered RSI data has been updated in {excel_file}')
 else:
     # If the file does not exist, create it with the new data
     with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
-        rsi_high_df.to_excel(writer, sheet_name='RSI >= 80', index=False)
-        rsi_low_df.to_excel(writer, sheet_name='RSI <= 20', index=False)
+        for interval in intervals:
+            rsi_high_df = pd.DataFrame(results[interval]['rsi_high'])
+            rsi_low_df = pd.DataFrame(results[interval]['rsi_low'])
+            
+            # Create a new sheet for the interval
+            sheet_name = f'{interval}'
+            start_row = 0
+            
+            # Write RSI >= 80 data
+            rsi_high_df.to_excel(writer, sheet_name=sheet_name, startrow=start_row, index=False)
+            start_row += len(rsi_high_df) + 2  # Add 2 rows spacing
+            
+            # Write RSI <= 20 data
+            rsi_low_df.to_excel(writer, sheet_name=sheet_name, startrow=start_row, index=False)
     print(f'Filtered RSI data has been exported to {excel_file}')
