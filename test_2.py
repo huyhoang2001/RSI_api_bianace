@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from openpyxl.styles import Border, Side, Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
 from colorama import Fore, Style, init
+import ta
+
 init(autoreset=True)
 load_dotenv()
 
@@ -20,20 +22,14 @@ class BinanceRSIAnalyzer:
         self.excel_file = 'rsi_filtered_data.xlsx'
 
     def _load_symbols(self):
-        with open('textcoin.txt', 'r') as file:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(current_dir, 'textcoin.txt')
+        with open(file_path, 'r') as file:
             return [line.strip() for line in file.readlines()]
 
-    def _calculate_rsi(self, close_prices, window=14):
-        delta = close_prices.diff()
-        gain = delta.where(delta > 0, 0)
-        loss = -delta.where(delta < 0, 0)
-
-        avg_gain = gain.rolling(window).mean()
-        avg_loss = loss.rolling(window).mean()
-
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi.dropna().tail(7)
+    def _calculate_rsi(self, close_prices, window=7):
+        rsi = ta.momentum.RSIIndicator(close_prices, window=window).rsi()
+        return rsi.dropna().tail(5)
 
     def _fetch_and_process_data(self, symbol, interval):
         try:
@@ -110,10 +106,10 @@ class BinanceRSIAnalyzer:
                     ws.column_dimensions[column].width = adjusted_width
 
                 # Tạo kiểu border đậm
-                border_style = Border(left=Side(style='thick'),
-                                    right=Side(style='thick'),
-                                    top=Side(style='thick'),
-                                    bottom=Side(style='thick'))
+                border_style = Border(left=Side(style='thin'),
+                                    right=Side(style='thin'),
+                                    top=Side(style='thin'),
+                                    bottom=Side(style='thin'))
 
                 # Áp dụng border cho toàn bộ dữ liệu
                 for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
